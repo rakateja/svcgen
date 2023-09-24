@@ -8,6 +8,6 @@ func NewManager(repo Repository) *Manager {
     return &Manager{repo}
 }
 
-func (svc *Manager) Create(input {{.StructName}}Input) ({{.StructName}}, error) {
+func (svc *Manager) Create(ctx context.Context, input {{.StructName}}Input) ({{.StructName}}, error) {
     return
 }

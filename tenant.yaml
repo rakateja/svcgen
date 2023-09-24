@@ -1,0 +1,31 @@
+list:
+  - id: Tenant
+    fields:
+    - id: id
+      type: UUID
+    - id: title
+      type: String
+    - id: plan
+      type: String
+    - id: createdBy
+      type: String
+    - id: updatedBy
+      type: String
+    - id: createdAt
+      type: Timestamp
+    - id: updatedAt
+      type: Timestamp
+  - id: Location
+    fields:
+    - id: id
+      type: UUID
+    - id: title
+      type: String
+    - id: createdBy
+      type: String
+    - id: updatedBy
+      type: String
+    - id: createdAt
+      type: Timestamp
+    - id: updatedAt
+      type: Timestamp

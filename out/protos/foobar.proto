@@ -1,0 +1,55 @@
+syntax = "proto3";
+
+package dev.raka.langit101;
+option go_package = "proto/rpcproto";
+import "google/protobuf/timestamp.proto"
+
+service ProductService {
+    rpc CreateProduct(ProductInput) returns (Product);
+    rpc FindByID(FindByIDReq) returns (Product);
+    rpc FindByIDs(FindByIDsReq) returns (ProductList);
+    rpc FindPage(PageReq) returns (ProductPage);
+}
+
+message FindByIDReq {
+    string id = 1;
+}
+message FindByIDsReq {
+    repeated string ids = 1;
+}
+message ProductList {
+    repeated Product items = 1;
+}
+message PageReq {
+    int32 page_num = 1;
+    int32 page_size = 2;
+}
+message ProductPage {
+    repeated Product items = 1;
+    int32 total = 2;
+}
+message ProductInput {
+}
+message Product {
+    string id = 0
+    string title = 1
+    string createdBy = 2
+    string updatedBy = 3
+    google.protobuf.Timestamp createdAt = 4
+    google.protobuf.Timestamp updatedAt = 5
+}
+message Variant {
+    string id = 0
+    string productId = 1
+    string title = 2
+    string image = 3
+    google.protobuf.Timestamp createdAt = 4
+}
+message Image {
+    string id = 0
+    string productId = 1
+    bool isMain = 2
+    string src = 3
+    string alt = 4
+    google.protobuf.Timestamp createdAt = 5
+}

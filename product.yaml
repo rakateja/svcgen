@@ -1,0 +1,45 @@
+list:
+  - id: Product
+    isParent: true
+    fields:
+    - id: id
+      type: UUID
+    - id: title
+      type: String
+    - id: createdBy
+      type: String
+    - id: updatedBy
+      type: String
+    - id: createdAt
+      type: Timestamp
+    - id: updatedAt
+      type: Timestamp
+    childs:
+    - type: Variant
+    - type: Image
+  - id: Variant
+    fields:
+    - id: id
+      type: UUID
+    - id: productId
+      type: String
+    - id: title
+      type: String
+    - id: image
+      type: String
+    - id: createdAt
+      type: Timestamp
+  - id: Image
+    fields:
+    - id: id
+      type: UUID
+    - id: productId
+      type: String
+    - id: isMain
+      type: Bool
+    - id: src
+      type: String
+    - id: alt
+      type: String
+    - id: createdAt
+      type: Timestamp

@@ -1,0 +1,22 @@
+version: '3.8'
+services:
+  postgres:
+    container_name: repogen-out-postgres
+    image: postgres:14
+    restart: always
+    environment:
+      - POSTGRES_USER=root
+      - POSTGRES_PASSWORD=root-is-not-used
+    networks:
+      - repogen-out-network
+    ports:
+      - '5434:5432'
+    volumes: 
+      - db:/var/lib/postgresql/data
+volumes:
+  db:
+    driver: local
+networks:
+  repogen-out-network:
+    driver: bridge
+    name: repogen-out-network

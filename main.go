@@ -14,29 +14,16 @@ import (
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 	"gopkg.in/yaml.v3"
+
+	"github.com/rakateja/repogen/pkg/entity"
+	"github.com/rakateja/repogen/pkg/twirprpc"
 )
 
 //go:embed product.yaml
 var input string
 
-type Entity struct {
-	ID       string        `yaml:"id"`
-	IsParent bool          `yaml:"isParent"`
-	Fields   []Field       `yaml:"fields"`
-	Childs   []EntityChild `yaml:"childs"`
-}
-
-type EntityChild struct {
-	Type string `yaml:"type"`
-}
-
-type Field struct {
-	ID   string `yaml:"id"`
-	Type string `yaml:"type"`
-}
-
 type CmdInput struct {
-	List []Entity `yaml:"list"`
+	List []entity.Entity `yaml:"list"`
 }
 
 var cmdOutString string
@@ -73,7 +60,7 @@ func main() {
 	for _, outFile := range cmdOutFiles {
 		switch outFile {
 		case "twirp":
-			if err := rpcOutHandler(targetDir, protoDir, pkgName, cmdInput.List); err != nil {
+			if err := twirprpc.Handler(targetDir, protoDir, pkgName, cmdInput.List); err != nil {
 				log.Fatalf("%v", err)
 			}
 		case "repo":
@@ -83,8 +70,8 @@ func main() {
 	}
 }
 
-func validateEntityList(list []Entity) error {
-	entityNames := make(map[string]Entity, 0)
+func validateEntityList(list []entity.Entity) error {
+	entityNames := make(map[string]entity.Entity, 0)
 	for _, entity := range list {
 		entityNames[entity.ID] = entity
 	}
@@ -195,7 +182,7 @@ type EntityData struct {
 	Fields        []EntityFieldData
 }
 
-func ModelGen(entityList []Entity, pkgName string, pkgs []string) (string, error) {
+func ModelGen(entityList []entity.Entity, pkgName string, pkgs []string) (string, error) {
 	t, err := template.New("base").Parse(modelTemplate)
 	if err != nil {
 		return "", err
@@ -241,7 +228,7 @@ func ModelGen(entityList []Entity, pkgName string, pkgs []string) (string, error
 	return bt.String(), nil
 }
 
-func RepoGen(entityList []Entity, pkgName string) (string, error) {
+func RepoGen(entityList []entity.Entity, pkgName string) (string, error) {
 	parent, childs, err := ToStructs(entityList)
 	if err != nil {
 		return "", err
@@ -266,7 +253,7 @@ func RepoGen(entityList []Entity, pkgName string) (string, error) {
 	return out.String(), nil
 }
 
-func ToPostgreSQLMigration(entityList []Entity) (string, error) {
+func ToPostgreSQLMigration(entityList []entity.Entity) (string, error) {
 	tableEntity := ToTableEntity(entityList)
 	t, err := template.New("base").
 		Funcs(template.FuncMap{
@@ -288,7 +275,7 @@ func ToPostgreSQLMigration(entityList []Entity) (string, error) {
 	return out.String(), nil
 }
 
-func SQLRepoGen(entityList []Entity, pkgName string) (string, error) {
+func SQLRepoGen(entityList []entity.Entity, pkgName string) (string, error) {
 	parent, childs, err := ToStructs(entityList)
 	if err != nil {
 		return "", err
@@ -334,7 +321,7 @@ func SQLRepoGen(entityList []Entity, pkgName string) (string, error) {
 	return out.String(), nil
 }
 
-func packagesFromEntityList(entityList []Entity) (res []string) {
+func packagesFromEntityList(entityList []entity.Entity) (res []string) {
 	for _, entity := range entityList {
 		for _, f := range entity.Fields {
 			if f.Type == "Timestamp" {
@@ -400,7 +387,7 @@ func ToNullablePQ(arg bool) string {
 	return "NOT NULL"
 }
 
-func ToTableEntity(entityList []Entity) []TableEntity {
+func ToTableEntity(entityList []entity.Entity) []TableEntity {
 	var tableEntityList []TableEntity
 	for _, entity := range entityList {
 		var columns []TableEntityColumn
@@ -419,7 +406,7 @@ func ToTableEntity(entityList []Entity) []TableEntity {
 	return tableEntityList
 }
 
-func ToStructs(entityList []Entity) (p EntityData, childs []EntityData, err error) {
+func ToStructs(entityList []entity.Entity) (p EntityData, childs []EntityData, err error) {
 	var parent *EntityData
 	for _, entity := range entityList {
 		var fields []EntityFieldData

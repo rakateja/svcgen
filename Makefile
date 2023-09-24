@@ -6,5 +6,5 @@ runv2:
 	go run *.go --out=rpc --target=../product
 
 install:
-	go build -o svcgen *.go
+	go build -o svcgen main.go
 	mv svcgen /usr/local/bin/svcgen

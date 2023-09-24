@@ -1,0 +1,30 @@
+package {{.PackageName}}
+
+import (
+    "fmt"
+    "context"
+
+    pb "github.com/rakateja/product/protos/{{.PackageName}}/rpcproto"
+)
+
+type RpcServer struct {}
+
+func NewRPCServer() pb.{{.EntityName}}Service {
+    return &RpcServer{}
+}
+
+func (svr *RpcServer) Create{{.EntityName}}(ctx context.Context, input *pb.{{.EntityName}}Input) (*pb.{{.EntityName}}, error) {
+    return nil, fmt.Errorf("Not implemented")
+}
+
+func (svr *RpcServer) FindByID(ctx context.Context, req *pb.FindByIDReq) (*pb.{{.EntityName}}, error) {
+    return nil, fmt.Errorf("Not implemented")
+}
+
+func (svr *RpcServer) FindByIDs(ctx context.Context, req *pb.FindByIDsReq) (*pb.{{.EntityName}}List, error) {
+    return nil, fmt.Errorf("Not implemented")
+}
+
+func (svr *RpcServer) FindPage(ctx context.Context, req *pb.PageReq) (*pb.{{.EntityName}}Page, error) {
+    return nil, fmt.Errorf("Not implemented")
+}

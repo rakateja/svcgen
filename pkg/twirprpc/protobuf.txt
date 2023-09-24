@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+package {{.PackageName}};
+option go_package = "protos/{{.GoPackageName}}/rpcproto";
+
+{{- range .ImportedPackages }}
+import "{{.}}";
+{{- end }}
+
+service {{.EntityName}}Service {
+    rpc Create{{.EntityName}}({{.EntityName}}Input) returns ({{.EntityName}});
+    rpc FindByID(FindByIDReq) returns ({{.EntityName}});
+    rpc FindByIDs(FindByIDsReq) returns ({{.EntityName}}List);
+    rpc FindPage(PageReq) returns ({{.EntityName}}Page);
+}
+
+message FindByIDReq {
+    string id = 1;
+}
+message FindByIDsReq {
+    repeated string ids = 1;
+}
+message {{.EntityName}}List {
+    repeated {{.EntityName}} items = 1;
+}
+message PageReq {
+    int32 page_num = 1;
+    int32 page_size = 2;
+}
+message {{.EntityName}}Page {
+    repeated {{.EntityName}} items = 1;
+    int32 total = 2;
+}
+message {{.EntityName}}Input {
+}
+
+{{- range .Protos }}
+message {{.Name}} {
+    {{- range $index, $results := .Fields }}
+    {{.Type}} {{.Name}} = {{ $index | plus_one }};
+    {{- end}}
+}
+{{- end }}

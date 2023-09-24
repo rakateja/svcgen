@@ -1,4 +1,4 @@
-package main
+package twirprpc
 
 import (
 	"bytes"
@@ -37,13 +37,13 @@ type TwirpRpcTemplateData struct {
 	EntityName  string
 }
 
-//go:embed templates/protobuf.txt
+//go:embed protobuf.txt
 var protobuffTemplate string
 
-//go:embed templates/twirprpc.txt
+//go:embed twirprpc.txt
 var twirpRpcTemplate string
 
-func rpcOutHandler(targetDir, protoDir, pkgName string, entityList []entity.Entity) error {
+func Handler(targetDir, protoDir, pkgName string, entityList []entity.Entity) error {
 	path := fmt.Sprintf("domains/%s", pkgName)
 	err := os.MkdirAll(path, os.ModePerm)
 	if err != nil {
@@ -104,7 +104,7 @@ func toTwirpRpc(entityName, packageName string) error {
 	}); err != nil {
 		return err
 	}
-	fileName := fmt.Sprintf("%s/%s/rpc.go", "domains", strings.ToLower(pkgName))
+	fileName := fmt.Sprintf("%s/%s/rpc.go", "domains", strings.ToLower(packageName))
 	if err := os.WriteFile(fileName, out.Bytes(), 0644); err != nil {
 		return err
 	}

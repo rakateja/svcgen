@@ -16,6 +16,7 @@ import (
 	"gopkg.in/yaml.v3"
 
 	"github.com/rakateja/repogen/pkg/entity"
+	"github.com/rakateja/repogen/pkg/migration"
 	"github.com/rakateja/repogen/pkg/repo"
 	"github.com/rakateja/repogen/pkg/twirprpc"
 )
@@ -67,6 +68,9 @@ func main() {
 				log.Fatalf("%v", err)
 			}
 		case "repo":
+			if err := migration.Handler(cmdInput.List); err != nil {
+				log.Fatalf("%v", err)
+			}
 			if err := repo.Handler(rootModule, pkgName, cmdInput.List); err != nil {
 				log.Fatalf("%v", err)
 			}

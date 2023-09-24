@@ -1,0 +1,6 @@
+{{ range . }}
+CREATE TABLE IF NOT EXISTS "{{.Name}}" (
+    {{ range .Columns }}"{{.Name}}" {{.Type}} {{sqlnullable .Nullable}},
+    {{ end }}PRIMARY KEY (id)
+);
+{{ end }}

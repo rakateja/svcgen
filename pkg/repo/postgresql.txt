@@ -1,0 +1,176 @@
+package {{.PackageName}}
+
+import (
+    {{ range .ImportedPackages}}{{.}}
+    {{ end }}
+)
+
+type sqlRepository struct {
+    db *database.PostgreSQL
+}
+
+func NewSQLRepository(db *database.PostgreSQL) Repository {
+    return &sqlRepository{db}
+}
+
+const (
+    selectQuery = `
+        SELECT
+            {{ sqlcolumns .Parent.Fields }}
+        FROM {{.Parent.TableName}}
+    `
+    selectCount = `
+        SELECT COUNT(id) FROM {{.Parent.TableName}}
+    `
+    insertQuery = `
+        INSERT INTO {{ .Parent.TableName}} (
+            {{ sqlcolumns .Parent.Fields }}
+        ) VALUES ({{ len .Parent.Fields | sqlvalues }})
+    `
+    updateQuery = `
+        UPDATE {{.Parent.TableName}}
+        SET
+    `
+    {{ range .Childs }}
+    select{{.StructName}}Query = `
+        SELECT
+            {{ sqlcolumns .Fields }}
+        FROM {{.TableName}}
+    `
+    {{ end }}
+    {{ range .Childs }}
+    insert{{.StructName}}Query = `
+        INSERT INTO {{ .TableName}} (
+            {{ sqlcolumns .Fields }}
+        ) VALUES ({{ len .Fields | sqlvalues }})
+    `
+    {{ end }}
+)
+
+func (repo *sqlRepository) Store(ctx context.Context, entity {{.Parent.StructName}}) error {
+    exist, err := repo.existByID(ctx, entity.Id)
+    if err != nil {
+        return err
+    }
+    if exist {
+        return repo.update(ctx, entity)
+    }
+    return repo.insert(ctx, entity)
+}
+
+func (repo *sqlRepository) Count(ctx context.Context) (total int, err error) {
+    if err := repo.db.Get(ctx, &total, selectCount); err != nil {
+        return 0, err
+    }
+    return total, nil
+}
+
+func (repo *sqlRepository) FindByID(ctx context.Context, id string) (res {{.Parent.StructName}}, err error) {
+    err = repo.db.Get(&res, selectQuery + " WHERE entity_id = " + id)
+    if err != nil {
+        return
+    }
+    {{ range .Childs }}
+    var {{.StructName }} []{{.StructName}}
+    err = repo.db.Select(ctx, &{{.StructName}}, select{{.StructName}}Query + " WHERE entity_id = " + id)
+    if err != nil {
+        return
+    }
+    {{ end }}
+    {{ range .Childs }}res.{{.StructName}}List = {{.StructName}}
+    {{ end }}
+    return
+}
+
+func (repo *sqlRepository) FindByIDs(ctx context.Context, ids []string) (res []{{.Parent.StructName}}, err error) {
+    if err = repo.db.Select(&res, selectQuery + " WHERE entity_id IN (:ids)", map[string]interface{}{
+        "ids": ids, 
+    }); err != nil {
+        return
+    }
+    return
+}
+
+func (repo *sqlRepository) FindPage(ctx context.Context, pageNum int, pageSize int) (res page.Page[{{.Parent.StructName}}], err error) {
+    total, err := repo.Count(ctx)
+    if err != nil {
+        return
+    }
+    var items []{{.Parent.StructName}}
+    offset := page.GetOffset(pageNum, pageSize)
+    if err := repo.db.Select(ctx, &items, " LIMIT $1 OFFSET $2", pageSize, offset); err != nil {
+        return res, err
+    }
+    return page.New[{{.Parent.StructName}}](items, total, pageNum, pageSize), nil
+}
+
+func (repo *sqlRepository) existByID(ctx context.Context, id string) (bool, error) {
+    var total int
+    if err := repo.db.Get(ctx, &total, " WHERE id = " + id); err != nil {
+        return false, err
+    }
+    return total > 0, nil
+}
+
+func (repo *sqlRepository) insert(ctx context.Context, tx *sqlx.Tx, entity {{.Parent.StructName}}) error {
+    res, err := tx.Execute(
+        insertQuery,
+        {{ range .Parent.Fields }}entity.{{ title .ID}},
+        {{ end }}
+    )
+    rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected <= 0 {
+		return errors.New("no rows affected")
+	}
+    return nil
+}
+
+func (repo *sqlRepository) update(ctx context.Context, entity {{.Parent.StructName}}) error {
+    res, err := tx.Execute(
+        updateQuery,
+        {{ range .Parent.Fields }}entity.{{ title .ID}},
+        {{ end }}
+    )
+    _, err = res.RowsAffected()
+	if err != nil {
+		return err
+	}
+    {{ range .Childs}}
+    if err = repo.deleteMulti{{.StructName}}(entity.ID); err != nil {
+        return err
+    }
+    {{ end }}
+    {{ range .Childs}}
+    if err = repo.insertMulti{{.StructName}}({{.}}); err != nil {
+        return err
+    }
+    {{ end }}
+    return nil
+}
+
+{{ range .Childs }}
+func (repo *sqlRepository) deleteMulti{{.StructName}}(id string) error {
+    return nil
+} 
+{{ end }}
+
+{{ range .Childs }}
+func (repo *sqlRepository) insertMulti{{.StructName}}(ls []{{.StructName}}) error {
+    return nil
+}
+{{ end }}
+{{ range .Childs }}
+func (repo *sqlRepository) select{{.StructName}}ByIDs(ids []string) (res []{{.StructName}}, err error) {
+    if err := repo.db.Select(&res, select{{.StructName}}Query + " WHERE {{.RootTableName}}_id IN (:ids)",
+        map[string]interface{}{
+            "ids": ids,
+        },
+    ); err != nil {
+        return res, err
+    }
+    return res, nil
+}
+{{ end }}

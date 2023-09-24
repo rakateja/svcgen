@@ -16,6 +16,7 @@ import (
 	"gopkg.in/yaml.v3"
 
 	"github.com/rakateja/repogen/pkg/entity"
+	"github.com/rakateja/repogen/pkg/repo"
 	"github.com/rakateja/repogen/pkg/twirprpc"
 )
 
@@ -30,6 +31,7 @@ var cmdOutString string
 var pkgName string
 var targetDir string
 var protoDir string
+var rootModule string
 var yamlFileInput string
 
 func init() {
@@ -37,6 +39,7 @@ func init() {
 	flag.StringVar(&pkgName, "pkg", "FooBar", "package name")
 	flag.StringVar(&targetDir, "target", "out", "target directory")
 	flag.StringVar(&protoDir, "proto_dir", "protos", "target directory of protobuf files")
+	flag.StringVar(&rootModule, "root_module", "github.com/rakateja/foo", "The root module of the target service")
 	flag.StringVar(&yamlFileInput, "input", "entity.yaml", "YAML file input")
 	flag.Parse()
 }
@@ -64,7 +67,9 @@ func main() {
 				log.Fatalf("%v", err)
 			}
 		case "repo":
-			mainPrev()
+			if err := repo.Handler(rootModule, pkgName, cmdInput.List); err != nil {
+				log.Fatalf("%v", err)
+			}
 			log.Printf("repo is selected.")
 		}
 	}

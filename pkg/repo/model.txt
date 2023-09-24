@@ -1,0 +1,18 @@
+package {{.PackageName}}
+
+import (
+    {{ range .ImportedPackages }}{{.}}
+    {{ end }}
+)
+
+type {{.Parent.StructName}} struct {
+{{ range .Parent.Fields }}{{.ID}} {{.Type}} `json:"{{.JsonTag}}" db:"{{.DBTag}}"`
+{{ end }}
+}
+
+{{ range .Child }}
+type {{.StructName}} struct {
+{{ range .Fields }}{{.ID}} {{.Type}} `json:"{{.JsonTag}}" db:"{{.DBTag}}"`
+{{ end }}
+}
+{{ end }}

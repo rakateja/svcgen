@@ -1,0 +1,16 @@
+package {{.PackageName}}
+
+import (
+    {{ range .ImportedPackages}}{{.}}
+    {{ end }}
+)
+
+type Repository interface {
+    Store(ctx context.Context, entity {{.Parent.StructName}}) error
+    Count(ctx context.Context) (int, error)
+    FindByID(ctx context.Context, id string) ({{.Parent.StructName}}, error)
+    FindByIDs(ctx context.Context, ids []string) ([]{{.Parent.StructName}}, error)
+    FindPage(ctx context.Context, pageNum int, limit int) (page.Page[{{.Parent.StructName}}], error)
+}
+
+

@@ -66,24 +66,25 @@ func (repo *sqlRepository) Count(ctx context.Context) (total int, err error) {
 }
 
 func (repo *sqlRepository) FindByID(ctx context.Context, id string) (res {{.Parent.StructName}}, err error) {
-    err = repo.db.Get(&res, selectQuery + " WHERE entity_id = " + id)
+    err = repo.db.Get(ctx, &res, selectQuery + " WHERE entity_id = " + id)
     if err != nil {
         return
     }
-    {{ range .Childs }}
-    var {{.StructName }} []{{.StructName}}
-    err = repo.db.Select(ctx, &{{.StructName}}, select{{.StructName}}Query + " WHERE entity_id = " + id)
+    {{- range .Childs }}
+    var {{.StructName | first_letter_to_lower}}List []{{.StructName}}
+    err = repo.db.Select(ctx, &{{.StructName | first_letter_to_lower}}List, select{{.StructName}}Query + " WHERE {{.RootTableName}}_id = " + id)
     if err != nil {
         return
     }
-    {{ end }}
-    {{ range .Childs }}res.{{.StructName}}List = {{.StructName}}
-    {{ end }}
+    {{- end }}
+    {{- range .Childs }}
+    res.{{.StructName}}List = {{.StructName | first_letter_to_lower}}List
+    {{- end }}
     return
 }
 
 func (repo *sqlRepository) FindByIDs(ctx context.Context, ids []string) (res []{{.Parent.StructName}}, err error) {
-    if err = repo.db.Select(&res, selectQuery + " WHERE entity_id IN (:ids)", map[string]interface{}{
+    if err = repo.db.Select(ctx, &res, selectQuery + " WHERE entity_id IN (:ids)", map[string]interface{}{
         "ids": ids, 
     }); err != nil {
         return
@@ -112,59 +113,88 @@ func (repo *sqlRepository) existByID(ctx context.Context, id string) (bool, erro
     return total > 0, nil
 }
 
-func (repo *sqlRepository) insert(ctx context.Context, tx *sqlx.Tx, entity {{.Parent.StructName}}) error {
-    res, err := tx.Execute(
-        insertQuery,
-        {{ range .Parent.Fields }}entity.{{ title .ID}},
-        {{ end }}
-    )
-    rowsAffected, err := res.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if rowsAffected <= 0 {
-		return errors.New("no rows affected")
-	}
+func (repo *sqlRepository) insert(ctx context.Context, entity {{.Parent.StructName}}) error {
+    if err := repo.db.WithTransaction(ctx, func(tx *sqlx.Tx) error {
+        res, err := tx.Exec(
+            insertQuery,
+            {{ range .Parent.Fields }}entity.{{ title .ID}},
+            {{ end }}
+        )
+        rowsAffected, err := res.RowsAffected()
+        if err != nil {
+            return err
+        }
+        if rowsAffected <= 0 {
+            return errors.New("no rows affected")
+        }
+        {{- range .Childs }}
+        if err = repo.insert{{.StructName}}List(tx, entity.{{.StructName}}List); err != nil {
+            return err
+        }
+        {{- end }}
+        return nil
+    }); err != nil {
+        return err
+    }
     return nil
 }
 
 func (repo *sqlRepository) update(ctx context.Context, entity {{.Parent.StructName}}) error {
-    res, err := tx.Execute(
-        updateQuery,
-        {{ range .Parent.Fields }}entity.{{ title .ID}},
-        {{ end }}
-    )
-    _, err = res.RowsAffected()
-	if err != nil {
-		return err
-	}
-    {{ range .Childs}}
-    if err = repo.deleteMulti{{.StructName}}(entity.ID); err != nil {
+    if err := repo.db.WithTransaction(ctx, func(tx *sqlx.Tx) error {
+        res, err := tx.Exec(
+            updateQuery,
+            {{ range .Parent.Fields }}entity.{{ title .ID}},
+            {{ end }}
+        )
+        _, err = res.RowsAffected()
+        if err != nil {
+            return err
+        }
+        {{- range .Childs}}
+        if err = repo.delete{{.StructName}}List(entity.Id); err != nil {
+            return err
+        }
+        {{- end }}
+        {{- range .Childs}}
+        if err = repo.insert{{.StructName}}List(tx, entity.{{.StructName}}List); err != nil {
+            return err
+        }
+        {{- end }}
+        return nil
+    }); err != nil {
         return err
     }
-    {{ end }}
-    {{ range .Childs}}
-    if err = repo.insertMulti{{.StructName}}({{.}}); err != nil {
-        return err
-    }
-    {{ end }}
     return nil
 }
 
 {{ range .Childs }}
-func (repo *sqlRepository) deleteMulti{{.StructName}}(id string) error {
+func (repo *sqlRepository) delete{{.StructName}}List(id string) error {
     return nil
 } 
 {{ end }}
 
 {{ range .Childs }}
-func (repo *sqlRepository) insertMulti{{.StructName}}(ls []{{.StructName}}) error {
+func (repo *sqlRepository) insert{{.StructName}}List(tx *sqlx.Tx, entityList []{{.StructName}}) error {
+    for _, entity := range entityList {
+        res, err := tx.Exec(insert{{.StructName}}Query, 
+            {{- range .Fields }}
+            entity.{{.ID}},
+            {{- end }}
+        )
+        if err != nil {
+            return err
+        }
+        _, err = res.RowsAffected()
+        if err != nil {
+            return err
+        }
+    }
     return nil
 }
 {{ end }}
 {{ range .Childs }}
-func (repo *sqlRepository) select{{.StructName}}ByIDs(ids []string) (res []{{.StructName}}, err error) {
-    if err := repo.db.Select(&res, select{{.StructName}}Query + " WHERE {{.RootTableName}}_id IN (:ids)",
+func (repo *sqlRepository) select{{.StructName}}ByIDs(ctx context.Context, ids []string) (res []{{.StructName}}, err error) {
+    if err := repo.db.Select(ctx, &res, select{{.StructName}}Query + " WHERE {{.RootTableName}}_id IN (:ids)",
         map[string]interface{}{
             "ids": ids,
         },

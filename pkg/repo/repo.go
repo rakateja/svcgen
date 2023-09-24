@@ -136,6 +136,16 @@ func SQLRepoGen(rootModule string, entityList []entity.Entity, pkgName string) (
 			"title": func(str string) string {
 				return cases.Title(language.Und, cases.NoLower).String(str)
 			},
+			"first_letter_to_lower": func(s string) string {
+				if len(s) == 0 {
+					return s
+				}
+
+				r := []rune(s)
+				r[0] = unicode.ToLower(r[0])
+
+				return string(r)
+			},
 		}).
 		Parse(postgreSQLRepoTemplate)
 	if err != nil {
@@ -145,7 +155,9 @@ func SQLRepoGen(rootModule string, entityList []entity.Entity, pkgName string) (
 	err = t.Execute(&out, RepoTemplateData{
 		PackageName: pkgName,
 		ImportedPackages: []string{
+			"\"errors\"",
 			"\"context\"",
+			"\"github.com/jmoiron/sqlx\"",
 			fmt.Sprintf("\"%s/page\"", rootModule),
 			fmt.Sprintf("\"%s/database\"", rootModule),
 		},

@@ -1,0 +1,13 @@
+package {{.PackageName}}
+
+type Manager struct {
+    repo Repository
+}
+
+func NewManager(repo Repository) *Manager {
+    return &Manager{repo}
+}
+
+func (svc *Manager) Create(input {{.StructName}}Input) ({{.StructName}}, error) {
+    return
+}

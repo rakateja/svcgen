@@ -242,8 +242,9 @@ func modelGen(in []entity.Entity, pkgName string) (string, error) {
 			continue
 		}
 		child = append(child, EntityData{
-			StructName: entity.ID,
-			Fields:     fields,
+			StructName:      entity.ID,
+			Fields:          fields,
+			TimestampFields: timestampFields,
 		})
 	}
 	if parent == nil {

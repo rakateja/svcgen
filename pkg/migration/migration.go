@@ -3,6 +3,7 @@ package migration
 import (
 	"bytes"
 	_ "embed"
+	"fmt"
 	"os"
 	"text/template"
 
@@ -23,15 +24,15 @@ type TableEntityColumn struct {
 	DefaultValue string
 }
 
-//go:embed postgresql_migration.txt
+//go:embed postgres.txt
 var sqlMigrationTemplate string
 
-func Handler(in []entity.Entity) error {
+func Handler(in []entity.Entity, pkgName string) error {
 	out, err := toMigration(in)
 	if err != nil {
 		return err
 	}
-	if err = os.WriteFile("migrations/1.sql", []byte(out), 0644); err != nil {
+	if err = os.WriteFile(fmt.Sprintf("migrations/init_%s.sql", pkgName), []byte(out), 0644); err != nil {
 		return err
 	}
 	return nil

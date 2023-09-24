@@ -19,7 +19,11 @@ type {{.Parent.StructName}} struct {
 
 {{ range .Child }}
 type {{.StructName}} struct {
-{{ range .Fields }}{{.ID}} {{.Type}} `json:"{{.JsonTag}}" db:"{{.DBTag}}"`
-{{ end }}
+{{- range .Fields }}
+{{.ID}} {{.Type}} `json:"{{.JsonTag}}" db:"{{.DBTag}}"`
+{{- end }}
+{{- range .TimestampFields }}
+{{.ID}} {{.Type}} `json:"{{.JsonTag}}" db:"{{.DBTag}}"`
+{{- end }}
 }
 {{ end }}

@@ -1,0 +1,26 @@
+package {{.PackageName}}
+
+import (
+    {{ range .ImportedPackages }}{{.}}
+    {{ end }}
+)
+
+type Query struct {
+    repo Repository
+}
+
+func NewQuery(repo Repository) *Query {
+    return &Query{repo}
+}
+
+func (svc *Query) FindByID(ctx context.Context, id string) ({{.StructName}}, error) {
+    return svc.repo.FindByID(ctx, id)
+}
+
+func (svc *Query) FindByIDs(ctx context.Context, ids []string) ([]{{.StructName}}, error) {
+    return svc.repo.FindByIDs(ctx, ids)
+}
+
+func (svc *Query) FindPage(ctx context.Context, pageNum, limit int) (res page.Page[{{.StructName}}], err error) {
+    return svc.repo.FindPage(ctx, pageNum, limit)
+}

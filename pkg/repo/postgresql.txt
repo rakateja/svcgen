@@ -120,6 +120,9 @@ func (repo *sqlRepository) insert(ctx context.Context, entity {{.Parent.StructNa
             {{ range .Parent.Fields }}entity.{{ title .ID}},
             {{ end }}
         )
+        if err != nil {
+            return err
+        }
         rowsAffected, err := res.RowsAffected()
         if err != nil {
             return err
@@ -146,6 +149,9 @@ func (repo *sqlRepository) update(ctx context.Context, entity {{.Parent.StructNa
             {{ range .Parent.Fields }}entity.{{ title .ID}},
             {{ end }}
         )
+        if err != nil {
+            return err
+        }
         _, err = res.RowsAffected()
         if err != nil {
             return err

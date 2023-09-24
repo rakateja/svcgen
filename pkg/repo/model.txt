@@ -6,8 +6,15 @@ import (
 )
 
 type {{.Parent.StructName}} struct {
-{{ range .Parent.Fields }}{{.ID}} {{.Type}} `json:"{{.JsonTag}}" db:"{{.DBTag}}"`
-{{ end }}
+{{- range .Parent.Fields }}
+{{.ID}} {{.Type}} `json:"{{.JsonTag}}" db:"{{.DBTag}}"`
+{{- end }}
+{{- range .Child }}
+{{.StructName}}List []{{.StructName}} `json:"{{.StructName | first_letter_to_lower}}List"`
+{{- end }}
+{{- range .Parent.TimestampFields }}
+{{.ID}} {{.Type}} `json:"{{.JsonTag}}" db:"{{.DBTag}}"`
+{{- end }}
 }
 
 {{ range .Child }}

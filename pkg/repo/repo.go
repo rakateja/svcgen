@@ -6,10 +6,11 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"regexp"
 	"strings"
 	"text/template"
+	"unicode"
 
+	"github.com/rakateja/repogen/pkg/common"
 	"github.com/rakateja/repogen/pkg/entity"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
@@ -46,10 +47,11 @@ type EntityFieldData struct {
 }
 
 type EntityData struct {
-	StructName    string
-	TableName     string
-	RootTableName string
-	Fields        []EntityFieldData
+	StructName      string
+	TableName       string
+	RootTableName   string
+	Fields          []EntityFieldData
+	TimestampFields []EntityFieldData
 }
 
 func Handler(rootModule, pkgName string, in []entity.Entity) error {
@@ -171,28 +173,59 @@ func packagesFromEntityList(entityList []entity.Entity) (res []string) {
 	return
 }
 
-func modelGen(entityList []entity.Entity, pkgName string) (string, error) {
-	pkgs := packagesFromEntityList(entityList)
-	t, err := template.New("base").Parse(modelTemplate)
+func modelGen(in []entity.Entity, pkgName string) (string, error) {
+	pkgs := packagesFromEntityList(in)
+	t, err := template.New("base").
+		Funcs(template.FuncMap{
+			"first_letter_to_lower": func(s string) string {
+				if len(s) == 0 {
+					return s
+				}
+
+				r := []rune(s)
+				r[0] = unicode.ToLower(r[0])
+
+				return string(r)
+			},
+		}).
+		Parse(modelTemplate)
 	if err != nil {
 		return "", err
 	}
 	var child []EntityData
 	var parent *EntityData
-	for _, entity := range entityList {
+	tsFields := map[string]bool{
+		"createdAt": true,
+		"updatedAt": true,
+		"createdBy": true,
+		"updatedBy": true,
+	}
+	for _, entity := range in {
 		var fields []EntityFieldData
+		var timestampFields []EntityFieldData
 		for _, field := range entity.Fields {
+			_, ok := tsFields[field.ID]
+			if ok {
+				timestampFields = append(timestampFields, EntityFieldData{
+					ID:      cases.Title(language.Und, cases.NoLower).String(field.ID),
+					Type:    toGoType(field.Type),
+					JsonTag: field.ID,
+					DBTag:   common.ToSnakeCase(field.ID),
+				})
+				continue
+			}
 			fields = append(fields, EntityFieldData{
 				ID:      cases.Title(language.Und, cases.NoLower).String(field.ID),
 				Type:    toGoType(field.Type),
 				JsonTag: field.ID,
-				DBTag:   toSnakeCase(field.ID),
+				DBTag:   common.ToSnakeCase(field.ID),
 			})
 		}
 		if entity.IsParent {
 			parent = &EntityData{
-				StructName: entity.ID,
-				Fields:     fields,
+				StructName:      entity.ID,
+				Fields:          fields,
+				TimestampFields: timestampFields,
 			}
 			continue
 		}
@@ -240,14 +273,6 @@ func toGoType(t string) string {
 	return ""
 }
 
-func toSnakeCase(str string) string {
-	var matchFirstCap = regexp.MustCompile("(.)([A-Z][a-z]+)")
-	var matchAllCap = regexp.MustCompile("([a-z0-9])([A-Z])")
-	snake := matchFirstCap.ReplaceAllString(str, "${1}_${2}")
-	snake = matchAllCap.ReplaceAllString(snake, "${1}_${2}")
-	return strings.ToLower(snake)
-}
-
 func toStructs(entityList []entity.Entity) (p EntityData, childs []EntityData, err error) {
 	var parent *EntityData
 	for _, entity := range entityList {
@@ -257,13 +282,13 @@ func toStructs(entityList []entity.Entity) (p EntityData, childs []EntityData, e
 				ID:      cases.Title(language.Und, cases.NoLower).String(field.ID),
 				Type:    toGoType(field.Type),
 				JsonTag: field.ID,
-				DBTag:   toSnakeCase(field.ID),
+				DBTag:   common.ToSnakeCase(field.ID),
 			})
 		}
 		if entity.IsParent {
 			parent = &EntityData{
 				StructName: entity.ID,
-				TableName:  toSnakeCase(entity.ID),
+				TableName:  common.ToSnakeCase(entity.ID),
 				Fields:     fields,
 			}
 			continue
@@ -271,7 +296,7 @@ func toStructs(entityList []entity.Entity) (p EntityData, childs []EntityData, e
 		childs = append(childs, EntityData{
 			StructName:    entity.ID,
 			RootTableName: parent.TableName,
-			TableName:     toSnakeCase(entity.ID),
+			TableName:     common.ToSnakeCase(entity.ID),
 			Fields:        fields,
 		})
 	}

@@ -51,7 +51,7 @@ func Handler(rootModule, pkgName string, in []entity.Entity) error {
 	}
 
 	// Manager
-	tM, err := template.New("base").Parse(queryTemplate)
+	tM, err := template.New("base").Parse(managerTemplate)
 	if err != nil {
 		return err
 	}
@@ -60,14 +60,14 @@ func Handler(rootModule, pkgName string, in []entity.Entity) error {
 		PackageName: pkgName,
 		StructName:  structName,
 		ImportedPackages: []string{
+			"\"errors\"",
 			"\"context\"",
-			fmt.Sprintf("\"%s/page\"", rootModule),
 		},
 	}); err != nil {
 		return err
 	}
 	locManager := fmt.Sprintf("domains/%s/manager.go", pkgName)
-	err = os.WriteFile(locManager, out.Bytes(), 0644)
+	err = os.WriteFile(locManager, outManager.Bytes(), 0644)
 	if err != nil {
 		log.Fatalf("%v", err)
 	}

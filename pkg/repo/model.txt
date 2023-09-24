@@ -17,6 +17,12 @@ type {{.Parent.StructName}} struct {
 {{- end }}
 }
 
+type Input struct {}
+
+func ToEntity() ({{.Parent.StructName}}, error) {
+    return {{.Parent.StructName}}{}, nil
+}
+
 {{ range .Child }}
 type {{.StructName}} struct {
 {{- range .Fields }}

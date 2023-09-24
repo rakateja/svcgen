@@ -1,5 +1,10 @@
 package {{.PackageName}}
 
+import (
+    {{ range .ImportedPackages }}{{.}}
+    {{ end }}
+)
+
 type Manager struct {
     repo Repository
 }
@@ -8,6 +13,6 @@ func NewManager(repo Repository) *Manager {
     return &Manager{repo}
 }
 
-func (svc *Manager) Create(ctx context.Context, input {{.StructName}}Input) ({{.StructName}}, error) {
-    return
+func (svc *Manager) Create(ctx context.Context, input Input) (res {{.StructName}}, err error) {
+    return res, errors.New("Not implemented")
 }

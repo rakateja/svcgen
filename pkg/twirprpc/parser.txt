@@ -1,0 +1,16 @@
+package {{.PackageName}}
+
+import (
+    pb "github.com/rakateja/product/protos/{{.PackageName}}/rpcproto"
+)
+
+func FromPbInput(pbInput *pb.{{.EntityName}}Input) Input {
+    return Input{}
+}
+
+func To{{.EntityName}}Pb(entity {{.EntityName}}) *pb.{{.EntityName}} {
+    return nil
+}
+{{- range .Protos }}
+func to{{.EntityName}}Pb()
+{{- end }}

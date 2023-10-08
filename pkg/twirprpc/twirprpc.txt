@@ -7,14 +7,22 @@ import (
     pb "github.com/rakateja/product/protos/{{.PackageName}}/rpcproto"
 )
 
-type RpcServer struct {}
-
-func NewRPCServer() pb.{{.EntityName}}Service {
-    return &RpcServer{}
+type RpcServer struct {
+    m *Manager
+    q *Query
 }
 
-func (svr *RpcServer) Create{{.EntityName}}(ctx context.Context, input *pb.{{.EntityName}}Input) (*pb.{{.EntityName}}, error) {
-    return nil, fmt.Errorf("Not implemented")
+func NewRPCServer(m *Manager, q *Query) pb.{{.EntityName}}Service {
+    return &RpcServer{m, q}
+}
+
+func (svr *RpcServer) Create(ctx context.Context, pbInput *pb.{{.EntityName}}Input) (*pb.{{.EntityName}}, error) {
+    input := FromPbInput(pbInput)
+    res, err := svr.m.Create(ctx, input)
+    if err != nil {
+        return nil, err
+    }
+    return To{{.EntityName}}Pb(res), nil
 }
 
 func (svr *RpcServer) FindByID(ctx context.Context, req *pb.FindByIDReq) (*pb.{{.EntityName}}, error) {

@@ -146,6 +146,9 @@ func SQLRepoGen(rootModule string, entityList []entity.Entity, pkgName string) (
 
 				return string(r)
 			},
+			"plus_one": func(n int) int {
+				return n + 1
+			},
 		}).
 		Parse(postgreSQLRepoTemplate)
 	if err != nil {

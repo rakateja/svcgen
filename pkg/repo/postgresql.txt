@@ -28,8 +28,11 @@ const (
         ) VALUES ({{ len .Parent.Fields | sqlvalues }})
     `
     updateQuery = `
-        UPDATE {{.Parent.TableName}}
-        SET
+        UPDATE {{.Parent.TableName}} SET
+        {{- range $index, $result := .Parent.Fields }}
+            {{.DBTag}} = ${{ $index | plus_one }},
+        {{- end }}
+        WHERE id = ${{ .Parent.Fields | len | plus_one }}
     `
     {{ range .Childs }}
     select{{.StructName}}Query = `

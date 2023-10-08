@@ -4,6 +4,7 @@ type Entity struct {
 	ID       string        `yaml:"id"`
 	IsParent bool          `yaml:"isParent"`
 	Fields   []Field       `yaml:"fields"`
+	Filter   []string      `yaml:"filter"`
 	Childs   []EntityChild `yaml:"childs"`
 }
 

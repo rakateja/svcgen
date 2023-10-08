@@ -90,3 +90,7 @@ func validateEntityList(list []entity.Entity) error {
 	}
 	return nil
 }
+
+func validateFilter() error {
+	return nil
+}

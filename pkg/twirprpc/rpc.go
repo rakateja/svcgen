@@ -43,6 +43,9 @@ var protobuffTemplate string
 //go:embed twirprpc.txt
 var twirpRpcTemplate string
 
+//go:embed parser.txt
+var parserTemplate string
+
 func Handler(targetDir, protoDir, pkgName string, entityList []entity.Entity) error {
 	path := fmt.Sprintf("domains/%s", pkgName)
 	err := os.MkdirAll(path, os.ModePerm)
@@ -88,6 +91,9 @@ func Handler(targetDir, protoDir, pkgName string, entityList []entity.Entity) er
 	if err = toTwirpRpc(entityName, pkgName); err != nil {
 		return err
 	}
+	if err = toParser(entityName, pkgName); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -111,9 +117,29 @@ func toTwirpRpc(entityName, packageName string) error {
 	return nil
 }
 
-func toProtoBuffEntity(entityList []entity.Entity) []ProtoEntity {
+func toParser(entityName, packageName string) error {
+	t, err := template.New("base").
+		Parse(parserTemplate)
+	if err != nil {
+		return err
+	}
+	var out bytes.Buffer
+	if err := t.Execute(&out, TwirpRpcTemplateData{
+		PackageName: packageName,
+		EntityName:  entityName,
+	}); err != nil {
+		return err
+	}
+	fileName := fmt.Sprintf("%s/%s/parser.go", "domains", strings.ToLower(packageName))
+	if err := os.WriteFile(fileName, out.Bytes(), 0644); err != nil {
+		return err
+	}
+	return nil
+}
+
+func toProtoBuffEntity(in []entity.Entity) []ProtoEntity {
 	var pb []ProtoEntity
-	for _, entity := range entityList {
+	for _, entity := range in {
 		var fields []ProtoEntityField
 		for _, field := range entity.Fields {
 			fields = append(fields, ProtoEntityField{

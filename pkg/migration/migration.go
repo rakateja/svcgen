@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"text/template"
+	"time"
 
 	"github.com/rakateja/repogen/pkg/common"
 	"github.com/rakateja/repogen/pkg/entity"
@@ -32,7 +33,9 @@ func Handler(in []entity.Entity, pkgName string) error {
 	if err != nil {
 		return err
 	}
-	if err = os.WriteFile(fmt.Sprintf("migrations/init_%s.sql", pkgName), []byte(out), 0644); err != nil {
+	now := time.Now()
+	dateStr := fmt.Sprintf("%d_%d_%d", now.Year(), now.Month(), now.Day())
+	if err = os.WriteFile(fmt.Sprintf("migrations/%s_init_%s.sql", dateStr, pkgName), []byte(out), 0644); err != nil {
 		return err
 	}
 	return nil
